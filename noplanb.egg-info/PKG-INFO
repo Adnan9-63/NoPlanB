@@ -1,0 +1,107 @@
+Metadata-Version: 2.4
+Name: noplanb
+Version: 0.1.0
+Summary: An open-source AI execution engine that replaces passive planning with durable, air-gapped cognitive accountability.
+Author-email: Adnan <adnan@noplanb.local>
+License: Apache-2.0
+Keywords: productivity,ai,gemma,temporal,open-source,second-brain
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: temporalio>=1.9.0
+Requires-Dist: openai>=1.30.0
+Requires-Dist: fastapi>=0.111.0
+Requires-Dist: uvicorn[standard]>=0.29.0
+Requires-Dist: python-frontmatter>=1.1.0
+Requires-Dist: python-dotenv>=1.0.1
+Requires-Dist: sentry-sdk[openai]>=2.64.0
+Requires-Dist: faiss-cpu>=1.8.0
+Requires-Dist: sentence-transformers>=3.0.0
+Requires-Dist: pydantic>=2.7.0
+Requires-Dist: pydantic-settings>=2.2.0
+Requires-Dist: httpx>=0.27.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.2.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.23.0; extra == "dev"
+Requires-Dist: ruff>=0.4.0; extra == "dev"
+Requires-Dist: mypy>=1.10.0; extra == "dev"
+Requires-Dist: pytest-cov>=5.0.0; extra == "dev"
+
+# NoPlanB
+
+**NoPlanB** is an open-source, air-gapped AI execution engine designed to cure "productive procrastination." Instead of letting you endlessly organize goals in Obsidian, it forces you to face them using a local Gemma model, a Temporal durable state machine, and behavioral science.
+
+Built for the **Hacktoberfest 2026 Weekend Challenge: Build for a Friend**.
+
+## Why It Exists (The Problem)
+
+Traditional tools like Obsidian, Notion, and Yeolpumta (YPT) often fail because they enable *productive procrastination*. Writing a massive goal for 2026 feels good, but staring at a 50-item checklist triggers cognitive overwhelm and emotional avoidance. Time trackers record failure but don't prevent it. 
+
+NoPlanB fixes this by replacing the passive list with a **Socratic WOOP Interrogator** and a **Single-Task Drip Engine**.
+
+## Architecture & Tech Stack
+
+1. **Local AI Interrogator (Google Gemma via Ollama)**
+   - NoPlanB uses Gemma to interrogate your vague goals, forcing you to identify the specific micro-action and the *internal emotional obstacle* preventing you from starting.
+   - It runs locally to ensure your raw journal entries and fears remain 100% private.
+2. **Durable State Machine (Temporal Python SDK)**
+   - Once a task is defined, Temporal takes over. It drip-feeds exactly ONE task at a time.
+   - Temporal allows the workflow to safely pause for hours or days, waiting for your signal (`Done`, `Stuck`, `Resist`, `Defer`) without losing state or draining CPU.
+3. **Behavioral Observability (Sentry Agent Tracing)**
+   - Sentry instruments the local Gemma calls to measure "cognitive friction latency" (how long you avoid committing to a plan).
+   - Tracks model token usage and workflow timeouts.
+4. **Obsidian-Compatible Vault**
+   - Data isn't locked in a database. Everything is saved as standard Markdown files with YAML front-matter in the `vault/` directory.
+
+## Hacktoberfest 2026 Sponsor Categories
+
+This project targets the following prize tracks:
+- **Build for a Friend (Overall)**: Built directly for a friend struggling to turn their 2026 diary goals into execution.
+- **Best Use of Temporal**: Uses `@workflow.signal` and `workflow.wait_condition` to manage human-in-the-loop multi-day executions.
+- **Best Use of Gemma**: Uses Gemma locally (via Ollama) as a Socratic interrogator.
+- **Best Use of Sentry**: Implements Sentry Agent Tracing to monitor LLM latencies and user friction points.
+
+## Setup Instructions
+
+### Prerequisites
+1. **Python 3.11+**
+2. **Ollama**: Install [Ollama](https://ollama.ai/) and pull the Gemma model:
+   ```bash
+   ollama pull gemma3:4b
+   ```
+3. **Temporal**: Install the [Temporal CLI](https://docs.temporal.io/cli/) and start the local dev server:
+   ```bash
+   temporal server start-dev
+   ```
+
+### Installation
+1. Clone the repository and install dependencies:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # Or .venv\Scripts\activate on Windows
+   pip install -r requirements.txt # Or hatch/poetry if you prefer
+   ```
+2. Copy the environment template:
+   ```bash
+   cp .env.example .env
+   ```
+   *Add your Sentry DSN to `.env` if you want observability.*
+
+### Running the System
+You need two terminal windows.
+
+**Terminal 1: The Temporal Worker**
+Runs the background state machine and executes Gemma tasks.
+```bash
+python -m temporal_app.worker
+```
+
+**Terminal 2: The API Server & UI**
+Runs the FastAPI backend and serves the minimal UI.
+```bash
+python -m api.server
+```
+
+Open `http://127.0.0.1:8000` in your browser to start your first session.
+
+## License
+Apache 2.0

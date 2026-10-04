@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NoPlanB</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      /* Aesthetic based on provided dark dashboard */
+      --bg-outer: #C3D9A3; /* Pastel Green */
+      --bg-dash: #0B0D0E;  /* Deep Black */
+      --bg-card: #181A1B;  /* Dark Gray */
+      --bg-input: #232527;
+      
+      --text-main: #FFFFFF;
+      --text-muted: #8E9297;
+      
+      --accent-green: #9FF155;
+      --accent-orange: #FF9800;
+      
+      --radius-dash: 32px;
+      --radius-card: 20px;
+      --radius-pill: 50px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    
+    body {
+      background-color: var(--bg-outer);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 2rem;
+    }
+
+    /* Main Dashboard Container */
+    #dashboard {
+      width: 100%;
+      max-width: 1400px;
+      height: 100%;
+      background-color: var(--bg-dash);
+      border-radius: var(--radius-dash);
+      box-shadow: 0 24px 48px rgba(0,0,0,0.2);
+      display: flex;
+      overflow: hidden;
+      padding: 1.5rem;
+      gap: 1.5rem;
+    }
+
+    /* --- Left Sidebar (Obsidian File Explorer) --- */
+    #sidebar {
+      width: 260px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: white;
+      font-weight: 800;
+      font-size: 1.4rem;
+      padding: 0.5rem 1rem;
+      letter-spacing: -0.5px;
+    }
+    .brand-icon {
+      width: 32px; height: 32px;
+      background: white; color: black;
+      border-radius: 50%; display: flex; justify-content: center; align-items: center;
+      font-size: 1rem;
+    }
+
+    .nav-section {
+      background: var(--bg-card);
+      border-radius: var(--radius-card);
+      padding: 1.2rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .nav-title { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 1rem; letter-spacing: 1px; }
+    
+    /* --- Tree View (Obsidian Style) --- */
+    #file-list {
+      flex: 1; overflow-y: auto;
+    }
+    .tree-folder-title {
+      color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      cursor: pointer; padding: 0.6rem 0.4rem; display: flex; align-items: center; gap: 6px;
+      letter-spacing: 0.5px;
+    }
+    .tree-folder-title:hover { color: white; }
+    .tree-folder-content {
+      padding-left: 14px; border-left: 1px solid rgba(255,255,255,0.05); margin-left: 8px; margin-bottom: 4px;
+    }
+    .tree-item {
+      padding: 0.5rem 0.6rem; color: var(--text-muted); cursor: pointer; border-radius: 8px;
+      font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 8px; margin-bottom: 2px;
+      transition: 0.1s;
+    }
+    .tree-item:hover { background: rgba(255,255,255,0.05); color: white; }
+    .tree-item.active { background: rgba(159, 241, 85, 0.1); color: var(--accent-green); font-weight: 600; }
+    .chevron { transition: transform 0.2s; font-size: 0.6rem; }
+    .chevron.open { transform: rotate(90deg); }
+
+    /* --- Middle Pane (Journaling) --- */
+    #journal-pane {
+      flex: 1;
+      background: var(--bg-card);
+      border-radius: var(--radius-card);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    .pane-header {
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .header-title { font-weight: 700; font-size: 1.2rem; color: white; text-transform: uppercase; letter-spacing: 0.5px;}
+    
+    .tab-row { display: flex; gap: 8px; background: var(--bg-dash); padding: 4px; border-radius: var(--radius-pill); }
+    .tab-btn {
+      background: transparent; border: none; color: var(--text-muted); 
+      cursor: pointer; font-size: 0.85rem; font-weight: 600; padding: 6px 16px; border-radius: var(--radius-pill);
+      transition: 0.2s;
+    }
+    .tab-btn.active { color: black; background: var(--text-main); }
+    
+    #editor-container { flex: 1; position: relative; }
+    #journal-textarea {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: transparent; border: none; padding: 2rem; color: var(--text-main);
+      font-family: 'Courier New', Courier, monospace; font-size: 1.05rem; line-height: 1.7; resize: none;
+    }
+    #journal-textarea:focus { outline: none; }
+    
+    #markdown-preview {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      padding: 2rem; overflow-y: auto; display: none; line-height: 1.7; color: var(--text-main);
+    }
+    #markdown-preview h1, #markdown-preview h2 { margin-bottom: 1rem; color: white; }
+    .md-tag { color: var(--bg-dash); background: var(--accent-green); padding: 2px 8px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;}
+
+    /* --- Right Pane (The Crucible / Tasks) --- */
+    #task-pane {
+      width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    
+    /* Stats Widget */
+    .stats-widget {
+      background: var(--bg-card);
+      border-radius: var(--radius-card);
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .stat-box { display: flex; flex-direction: column; gap: 4px; }
+    .stat-label { color: var(--text-muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+    .stat-value { color: white; font-size: 1.8rem; font-weight: 800; }
+    .stat-value span { font-size: 1rem; color: var(--accent-green); margin-left: 4px; }
+
+    /* Crucible Form */
+    .crucible-widget {
+      background: var(--bg-card);
+      border-radius: var(--radius-card);
+      padding: 1.5rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    
+    .question-block { margin-bottom: 1.5rem; }
+    .question-label { display: block; font-weight: 700; margin-bottom: 0.5rem; color: white; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;}
+    .question-desc { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem; }
+    
+    .input-wrapper { display: flex; gap: 8px; background: var(--bg-input); border-radius: 12px; padding: 4px; }
+    input[type="text"] {
+      flex: 1; background: transparent; border: none; color: white;
+      padding: 0.8rem 1rem; font-size: 0.95rem; font-weight: 500;
+    }
+    input[type="text"]:focus { outline: none; }
+    
+    .btn-ai {
+      background: var(--bg-card); border: none; color: var(--accent-green);
+      border-radius: 8px; width: 40px; cursor: pointer; font-size: 1.2rem; transition: 0.2s;
+      display: flex; justify-content: center; align-items: center;
+    }
+    .btn-ai:hover { background: rgba(159, 241, 85, 0.2); }
+    
+    .btn-execute {
+      background: var(--accent-green); color: var(--bg-dash); border: none; padding: 1.2rem;
+      font-size: 1rem; font-weight: 800; border-radius: 16px; cursor: pointer; width: 100%; margin-top: auto; transition: 0.2s;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .btn-execute:hover { background: #8CE045; transform: translateY(-2px); }
+
+    /* Active Task Card (Replaces YPT Overlay) */
+    #active-task-widget {
+      display: none;
+      background: var(--bg-card);
+      border-radius: var(--radius-card);
+      padding: 2rem;
+      flex: 1;
+      flex-direction: column;
+      border: 1px solid rgba(159, 241, 85, 0.3);
+    }
+    .active-badge {
+      align-self: flex-start;
+      background: rgba(159, 241, 85, 0.2);
+      color: var(--accent-green);
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+    #active-task-title { font-size: 1.5rem; font-weight: 800; color: white; margin-bottom: 1rem; line-height: 1.3;}
+    .plan-box {
+      background: var(--bg-input);
+      padding: 1rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      border-left: 3px solid var(--accent-orange);
+    }
+    
+    .active-actions { display: flex; gap: 10px; margin-top: auto; }
+    .btn-finish { flex: 2; background: var(--accent-green); color: var(--bg-dash); border: none; padding: 1rem; font-weight: 800; border-radius: 12px; cursor: pointer; text-transform: uppercase;}
+    .btn-abort { flex: 1; background: var(--bg-input); color: white; border: none; padding: 1rem; font-weight: 700; border-radius: 12px; cursor: pointer; }
+
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+  <div id="dashboard">
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <div class="brand">
+        <div class="brand-icon">N</div>
+        NoPlanB
+      </div>
+      
+      <div class="nav-section">
+        <div class="nav-title" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>My Vault</span>
+          <button style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;" onclick="createNewNote()">+</button>
+        </div>
+        <div id="file-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Journal Pane -->
+    <div id="journal-pane">
+      <div class="pane-header">
+        <div class="header-title" id="current-file-name">Today</div>
+        <div class="tab-row">
+          <button class="tab-btn active" id="tab-edit" onclick="setMode('edit')">Edit</button>
+          <button class="tab-btn" id="tab-preview" onclick="setMode('preview')">Preview</button>
+        </div>
+      </div>
+      <div id="editor-container">
+        <textarea id="journal-textarea" placeholder="Dump your 2026 yearly goals, endless planning, and current anxieties here. Stop writing in your passive diary. Let's execute. Use [[links]] and #tags."></textarea>
+        <div id="markdown-preview"></div>
+      </div>
+    </div>
+
+    <!-- Right Task Pane -->
+    <div id="task-pane">
+      
+      <div class="stats-widget">
+        <div class="stat-box">
+          <span class="stat-label">Tasks Executed</span>
+          <div class="stat-value" id="stat-tasks">0</div>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Time Actually Working</span>
+          <div class="stat-value" id="stat-time">0<span>min</span></div>
+        </div>
+      </div>
+
+      <!-- Setup New Task -->
+      <div class="crucible-widget" id="crucible-setup">
+        <div class="nav-title">The Anti-Procrastination Crucible</div>
+        
+        <div class="question-block">
+          <label class="question-label">1. The Emotion (Limbic Friction)</label>
+          <span class="question-desc">What exact emotion is making you avoid this?</span>
+          <div class="input-wrapper">
+            <input type="text" id="q-emotion" placeholder="e.g. Overwhelm, Perfectionism, Ambiguity">
+            <button class="btn-ai" title="Ask AI" onclick="askAI('q-emotion', 'Based on my journal, what exact emotion (e.g., overwhelm, fear of failure, perfectionism) is driving my procrastination? Answer in 1 short sentence.')">✨</button>
+          </div>
+        </div>
+
+        <div class="question-block">
+          <label class="question-label">2. The Planning Trap</label>
+          <span class="question-desc">How are you 'productively procrastinating' this right now?</span>
+          <div class="input-wrapper">
+            <input type="text" id="q-distortion" placeholder="e.g. 'I need to do more research first', 'I need to organize my notes'">
+            <button class="btn-ai" title="Ask AI" onclick="askAI('q-distortion', 'Based on my journal, how am I using ''productive procrastination'' or endless planning to avoid doing actual work right now? Identify the specific excuse. Answer in 1 short sentence.')">✨</button>
+          </div>
+        </div>
+
+        <div class="question-block">
+          <label class="question-label">3. Atomic Action (The 2-Minute Rule)</label>
+          <span class="question-desc">What is the absolute smallest next physical step?</span>
+          <div class="input-wrapper">
+            <input type="text" id="q-task" placeholder="e.g. Open the PDF to page 1">
+            <button class="btn-ai" title="Ask AI" onclick="askAI('q-task', 'What is the absolute smallest atomic first step I should take right now based on my journal to break my paralysis? Answer in 1 short sentence.')">✨</button>
+          </div>
+        </div>
+
+        <div class="question-block">
+          <label class="question-label">4. Internal Obstacle (WOOP)</label>
+          <span class="question-desc">What feeling will make you quit?</span>
+          <div class="input-wrapper">
+            <input type="text" id="q-obstacle" placeholder="e.g. I will feel bored">
+            <button class="btn-ai" title="Ask AI" onclick="askAI('q-obstacle', 'Based on my journal, what is the most likely internal psychological obstacle that will stop me? Answer in 1 short sentence.')">✨</button>
+          </div>
+        </div>
+
+        <div class="question-block">
+          <label class="question-label">5. Survival Plan (WOOP)</label>
+          <span class="question-desc">If that happens, what is your plan?</span>
+          <div class="input-wrapper">
+            <input type="text" id="q-plan" placeholder="e.g. Take 3 deep breaths">
+            <button class="btn-ai" title="Ask AI" onclick="askAI('q-plan', 'Write a short CBT implementation intention for me in the format: If [obstacle happens], then I will [action].')">✨</button>
+          </div>
+        </div>
+
+        <div class="question-block" style="margin-bottom: 2rem;">
+          <label class="question-label">Focus Duration</label>
+          <span class="question-desc">How many minutes will you execute?</span>
+          <div class="input-wrapper">
+            <input type="number" id="q-duration" value="25" min="1" max="120" style="text-align:center;">
+          </div>
+        </div>
+
+        <button class="btn-execute" onclick="startExecution()">Start Focus</button>
+      </div>
+
+      <!-- Active Task View (Replaces Fullscreen YPT) -->
+      <div id="active-task-widget">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div class="active-badge">🚀 STOP PLANNING. JUST EXECUTE.</div>
+          <div id="active-timer" style="font-size:3rem; font-weight:800; color:var(--accent-green); font-family:monospace; line-height:1; margin-top:-10px;">25:00</div>
+        </div>
+        <div id="active-task-title">Read page 1</div>
+        <div class="plan-box" id="active-task-plan">
+          <strong>If</strong> I get bored<br><strong>Then</strong> Take 3 breaths
+        </div>
+        <div class="active-actions">
+          <button class="btn-finish" onclick="finishTask('done')">Done</button>
+          <button class="btn-abort" onclick="finishTask('stuck')">Abort</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let saveTimeout = null;
+    let currentFilePath = null;
+    let executionStartTime = 0;
+    let timerInterval = null;
+    let secondsRemaining = 0;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadFileList();
+      await loadToday();
+      await updateStats();
+    });
+
+    async function updateStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        document.getElementById('stat-tasks').textContent = data.tasks;
+        document.getElementById('stat-time').innerHTML = `${data.minutes}<span>min</span>`;
+      } catch(e) {}
+    }
+
+    function toggleFolder(el) {
+      const content = el.nextElementSibling;
+      const chevron = el.querySelector('.chevron');
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        chevron.classList.add('open');
+      } else {
+        content.style.display = 'none';
+        chevron.classList.remove('open');
+      }
+    }
+
+    async function loadFileList() {
+      try {
+        const res = await fetch('/api/vault/files');
+        const data = await res.json();
+        const list = document.getElementById('file-list');
+        list.innerHTML = '';
+        
+        // Build Tree structure
+        const tree = {};
+        data.files.forEach(f => {
+          const parts = f.path.split('/');
+          let curr = tree;
+          for(let i=0; i<parts.length-1; i++) {
+            const p = parts[i];
+            if(!curr[p]) curr[p] = { __type: 'folder', children: {} };
+            curr = curr[p].children;
+          }
+          curr[parts[parts.length-1]] = { __type: 'file', data: f };
+        });
+
+        // Recursive render
+        function renderTree(node, container) {
+          const keys = Object.keys(node).sort();
+          keys.forEach(k => {
+            const item = node[k];
+            if (item.__type === 'folder') {
+              const fTitle = document.createElement('div');
+              fTitle.className = 'tree-folder-title';
+              fTitle.innerHTML = `<span class="chevron open">▶</span> 📁 ${k}`;
+              fTitle.onclick = () => toggleFolder(fTitle);
+              
+              const fContent = document.createElement('div');
+              fContent.className = 'tree-folder-content';
+              
+              container.appendChild(fTitle);
+              container.appendChild(fContent);
+              
+              renderTree(item.children, fContent);
+            } else {
+              const div = document.createElement('div');
+              div.className = `tree-item ${item.data.path === currentFilePath ? 'active' : ''}`;
+              div.textContent = `📝 ${item.data.name.replace('.md', '')}`;
+              div.onclick = () => loadFile(item.data.path, item.data.name);
+              container.appendChild(div);
+            }
+          });
+        }
+        
+        renderTree(tree, list);
+        await updateStats();
+      } catch(e) { console.error(e); }
+    }
+
+    async function loadToday() {
+      try {
+        const res = await fetch('/api/journal/today');
+        const data = await res.json();
+        currentFilePath = data.path;
+        document.getElementById('current-file-name').textContent = data.date;
+        document.getElementById('journal-textarea').value = data.content;
+        updateMarkdownPreview();
+        loadFileList(); // Refresh active state
+      } catch(e) {}
+    }
+
+    async function loadFile(path, name) {
+      try {
+        const res = await fetch(`/api/vault/file?path=${encodeURIComponent(path)}`);
+        const data = await res.json();
+        currentFilePath = path;
+        document.getElementById('current-file-name').textContent = name;
+        document.getElementById('journal-textarea').value = data.content;
+        updateMarkdownPreview();
+        loadFileList(); // Refresh active state
+      } catch(e) {}
+    }
+
+    document.getElementById('journal-textarea').addEventListener('input', () => {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(async () => {
+        if(!currentFilePath) return;
+        const content = document.getElementById('journal-textarea').value;
+        try {
+          await fetch(`/api/vault/file?path=${encodeURIComponent(currentFilePath)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content })
+          });
+          updateMarkdownPreview();
+        } catch(e) {}
+      }, 1000);
+    });
+
+    async function createNewNote() {
+      const input = prompt("Enter note path (e.g. 'journals/2026/Goals/My Note'):");
+      if (!input) return;
+      
+      // Clean path but allow slashes
+      const safePath = input.replace(/[^a-zA-Z0-9 \/_-]/g, "").replace(/ /g, "_");
+      let fullPath = safePath;
+      if (!fullPath.endsWith('.md')) fullPath += '.md';
+      
+      const title = fullPath.split('/').pop().replace('.md', '').replace(/_/g, ' ');
+
+      try {
+        await fetch(`/api/vault/file?path=${encodeURIComponent(fullPath)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: `# ${title}\n\n` })
+        });
+        await loadFileList();
+        loadFile(fullPath, title);
+      } catch(e) {}
+    }
+
+    function setMode(mode) {
+      document.getElementById('tab-edit').classList.toggle('active', mode === 'edit');
+      document.getElementById('tab-preview').classList.toggle('active', mode === 'preview');
+      document.getElementById('journal-textarea').style.display = mode === 'edit' ? 'block' : 'none';
+      document.getElementById('markdown-preview').style.display = mode === 'preview' ? 'block' : 'none';
+      if(mode === 'preview') updateMarkdownPreview();
+    }
+
+    function updateMarkdownPreview() {
+      let text = document.getElementById('journal-textarea').value;
+      
+      // Obsidian-style [[links]]
+      // When clicked, it attempts to load 'journals/<LinkName>.md'
+      text = text.replace(/\[\[(.*?)\]\]/gim, '<a href="#" onclick="loadFile(\'journals/$1.md\', \'$1\'); return false;" style="color:var(--accent-green); text-decoration:none;">[[$1]]</a>');
+      
+      // Obsidian #tags
+      text = text.replace(/(^|\s)#([a-zA-Z0-9_]+)/gim, '$1<span class="md-tag">#$2</span>');
+      
+      // Parse with robust marked.js
+      document.getElementById('markdown-preview').innerHTML = marked.parse(text);
+    }
+
+    async function askAI(inputId, question) {
+      const dump = document.getElementById('journal-textarea').value.trim();
+      if (!dump) { alert("Write your thoughts in the journal first!"); return; }
+      const input = document.getElementById(inputId);
+      input.value = "";
+      input.placeholder = "Thinking...";
+      try {
+        const res = await fetch('/api/ai/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ journal_dump: dump, question: question })
+        });
+        const data = await res.json();
+        input.value = data.answer.replace(/^"|"$/g, ''); 
+      } catch (e) { input.placeholder = "Error contacting AI"; }
+    }
+
+    function updateTimerDisplay() {
+      const m = Math.floor(secondsRemaining / 60).toString().padStart(2, '0');
+      const s = (secondsRemaining % 60).toString().padStart(2, '0');
+      document.getElementById('active-timer').textContent = `${m}:${s}`;
+    }
+
+    function startExecution() {
+      const task = document.getElementById('q-task').value.trim();
+      const obs = document.getElementById('q-obstacle').value.trim();
+      const plan = document.getElementById('q-plan').value.trim();
+      const mins = parseInt(document.getElementById('q-duration').value) || 25;
+
+      if (!task) { alert("Please define an atomic task first."); return; }
+
+      document.getElementById('active-task-title').textContent = task;
+      document.getElementById('active-task-plan').innerHTML = 
+        `<strong>IF</strong> ${obs || 'distracted'}<br><strong>THEN</strong> ${plan || 'return to work'}`;
+      
+      executionStartTime = Date.now();
+      secondsRemaining = mins * 60;
+      updateTimerDisplay();
+      
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        if (secondsRemaining > 0) {
+          secondsRemaining--;
+          updateTimerDisplay();
+        }
+      }, 1000);
+
+      document.getElementById('crucible-setup').style.display = 'none';
+      document.getElementById('active-task-widget').style.display = 'flex';
+    }
+
+    async function finishTask(status) {
+      clearInterval(timerInterval);
+      const frictionSec = Math.floor((Date.now() - executionStartTime) / 1000);
+      const durationMins = parseInt(document.getElementById('q-duration').value) || 25;
+      
+      const payload = {
+        atomic_task: document.getElementById('q-task').value,
+        duration_min: durationMins,
+        obstacle: document.getElementById('q-obstacle').value,
+        intention: document.getElementById('q-plan').value,
+        status: status,
+        friction_sec: frictionSec,
+        emotion: document.getElementById('q-emotion').value || "None",
+        distortion: document.getElementById('q-distortion').value || "None"
+      };
+
+      try {
+        await fetch('/api/task/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        await loadFileList(); // Refresh stats
+      } catch(e) {}
+
+      document.getElementById('active-task-widget').style.display = 'none';
+      document.getElementById('crucible-setup').style.display = 'flex';
+      
+      document.getElementById('q-task').value = '';
+      document.getElementById('q-obstacle').value = '';
+      document.getElementById('q-plan').value = '';
+      document.getElementById('q-emotion').value = '';
+      document.getElementById('q-distortion').value = '';
+    }
+  </script>
+</body>
+</html>

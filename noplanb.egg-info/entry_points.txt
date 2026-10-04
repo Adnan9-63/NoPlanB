@@ -1,0 +1,3 @@
+[console_scripts]
+noplanb-api = api.server:main
+noplanb-worker = temporal_app.worker:main
